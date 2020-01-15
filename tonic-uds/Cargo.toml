@@ -1,0 +1,29 @@
+[package]
+name = "tonic-uds"
+version = "0.1.0"
+authors = ["Linus Färnstrand <linus@mullvad.net>"]
+edition = "2018"
+
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
+[dependencies]
+tonic = "0.1.0"
+bytes = "0.4"
+prost = "0.6"
+
+tokio = { version = "0.2", features = ["rt-threaded", "time", "stream", "fs", "macros", "uds"] }
+futures = { version = "0.3", default-features = false, features = ["alloc"]}
+async-stream = "0.2"
+http = "0.2"
+tower = "0.3" 
+
+prost-types = "0.6"
+
+[build-dependencies]
+tonic-build = "0.1.0"
