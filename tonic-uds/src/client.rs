@@ -11,7 +11,6 @@ pub mod pb {
 }
 use pb::{echo_client::EchoClient, EchoRequest};
 
-
 #[cfg(unix)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -20,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // as the request to the `MakeConnection`.
     let channel = Endpoint::try_from("lttp://[::]:50051")?
         .connect_with_connector(service_fn(|_: Uri| {
-            let path = "/tmp/tonic/helloworld";
+            let path = "/tmp/helloworld";
 
             // Connect to a Uds socket
             UnixStream::connect(path)
