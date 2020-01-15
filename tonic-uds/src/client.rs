@@ -1,17 +1,15 @@
 #![cfg_attr(not(unix), allow(unused_imports))]
 
 use std::convert::TryFrom;
-#[cfg(unix)]
-use tokio::net::UnixStream;
 use tonic::transport::{Endpoint, Uri};
 use tower::service_fn;
+use parity_tokio_ipc::Endpoint as IpcEndpoint;
 
 pub mod pb {
     tonic::include_proto!("/grpc.examples.echo");
 }
 use pb::{echo_client::EchoClient, EchoRequest};
 
-#[cfg(unix)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // We will ignore this uri because uds do not use it
@@ -19,10 +17,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // as the request to the `MakeConnection`.
     let channel = Endpoint::try_from("lttp://[::]:50051")?
         .connect_with_connector(service_fn(|_: Uri| {
-            let path = "/tmp/helloworld";
+            let path = if cfg!(windows) {
+                format!("//./pipe/helloworld")
+            } else {
+                format!("/tmp/helloworld")
+            };
 
-            // Connect to a Uds socket
-            UnixStream::connect(path)
+            IpcEndpoint::connect(path)
         }))
         .await?;
 
@@ -47,9 +48,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-#[cfg(not(unix))]
-fn main() {
-    panic!("The `uds` example only works on unix systems!");
 }
