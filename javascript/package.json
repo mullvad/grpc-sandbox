@@ -2,7 +2,7 @@
   "name": "grpc-uds-test",
   "version": "0.0.1",
   "dependencies": {
-    "@grpc/grpc-js": "^0.6.15",
+    "@grpc/grpc-js": "file:../../grpc-node/packages/grpc-js",
     "@grpc/proto-loader": "^0.5.3"
   }
 }

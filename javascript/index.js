@@ -1,14 +1,7 @@
 const protoLoader = require('@grpc/proto-loader');
 const grpc = require('@grpc/grpc-js');
-const net = require('net');
 
-// A path that is parsable by grpc-js' resolvers is needed.
-const fakePath = 'unix://fakepath';
-const path = process.platform === 'win32' ? '\\\\.\\pipe\\helloworld' : '/tmp/helloworld';
-
-function createConnection() {
-  return net.createConnection({ path });
-}
+const path = process.platform === 'win32' ? '\\\\.\\pipe\\helloworld' : 'unix:///tmp/helloworld';
 
 protoLoader
   .load('../proto/echo.proto')
@@ -17,9 +10,7 @@ protoLoader
     // const { Echo, EchoRequest, EchoResponse } = ...
 
     const credentials = grpc.credentials.createInsecure();
-    credentials._getConnectionOptions = () => ({ createConnection });
-
-    const client = new Echo(fakePath, credentials);
+    const client = new Echo(path, credentials);
 
     client.unaryEcho({ message: 'hello' }, function(_, response) {
       console.log(response);
