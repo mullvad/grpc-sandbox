@@ -4,8 +4,7 @@ const net = require('net');
 
 // A path that is parsable by grpc-js' resolvers is needed.
 const fakePath = 'unix://fakepath';
-// TODO: Add named pipe
-const path = process.platform === 'win32' ? '' : '/tmp/helloworld';
+const path = process.platform === 'win32' ? '\\\\.\\pipe\\helloworld' : '/tmp/helloworld';
 
 function createConnection() {
   return net.createConnection({ path });
