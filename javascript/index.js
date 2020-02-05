@@ -1,7 +1,8 @@
 const protoLoader = require('@grpc/proto-loader');
 const grpc = require('@grpc/grpc-js');
 
-const path = process.platform === 'win32' ? '\\\\.\\pipe\\helloworld' : 'unix:///tmp/helloworld';
+const path =
+  process.platform === 'win32' ? 'unix:\\\\.\\pipe\\helloworld' : 'unix:///tmp/helloworld';
 
 protoLoader
   .load('../proto/echo.proto')
