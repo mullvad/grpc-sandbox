@@ -3,16 +3,18 @@
 use futures::stream::TryStreamExt;
 use futures::Stream;
 use std::{
+    io,
     pin::Pin,
     task::{Context, Poll},
     time::Duration,
 };
 
 use parity_tokio_ipc::{Endpoint, SecurityAttributes};
-use tokio::io::{AsyncRead, AsyncWrite};
+use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::sync::mpsc;
 use tonic::transport::server::Connected;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
+use tokio_stream::wrappers::UnboundedReceiverStream;
 
 pub mod pb {
     tonic::include_proto!("/grpc.examples.echo");
@@ -33,7 +35,7 @@ impl pb::echo_server::Echo for EchoServer {
         Ok(Response::new(EchoResponse { message }))
     }
 
-    type ServerStreamingEchoStream = mpsc::Receiver<Result<EchoResponse, Status>>;
+    type ServerStreamingEchoStream = UnboundedReceiverStream<Result<EchoResponse, Status>>;
 
     async fn server_streaming_echo(
         &self,
@@ -41,7 +43,7 @@ impl pb::echo_server::Echo for EchoServer {
     ) -> EchoResult<Self::ServerStreamingEchoStream> {
         println!("ServerStreamingEcho = {:?}", request);
 
-        let (mut tx, rx) = mpsc::channel(4);
+        let (tx, rx) = mpsc::unbounded_channel();
         let message = request.into_inner().message;
 
         tokio::spawn(async move {
@@ -49,14 +51,15 @@ impl pb::echo_server::Echo for EchoServer {
                 let response = EchoResponse {
                     message: c.to_string(),
                 };
-                tx.send(Ok(response)).await.unwrap();
+                tx.send(Ok(response)).unwrap();
 
-                tokio::time::delay_for(Duration::from_secs(1)).await;
+                tokio::time::sleep(Duration::from_secs(1)).await;
             }
+
             println!("server_streaming_echo done sending");
         });
 
-        Ok(Response::new(rx))
+        Ok(Response::new(UnboundedReceiverStream::new(rx)))
     }
 
     async fn client_streaming_echo(
@@ -102,14 +105,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[derive(Debug)]
 pub struct StreamBox<T: AsyncRead + AsyncWrite>(pub T);
 
-impl<T: AsyncRead + AsyncWrite> Connected for StreamBox<T> {}
+impl<T: AsyncRead + AsyncWrite> Connected for StreamBox<T> {
+    type ConnectInfo = Option<()>;
+
+    fn connect_info(&self) -> Self::ConnectInfo {
+        None
+    }
+}
 
 impl<T: AsyncRead + AsyncWrite + Unpin> AsyncRead for StreamBox<T> {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<std::io::Result<usize>> {
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
         Pin::new(&mut self.0).poll_read(cx, buf)
     }
 }

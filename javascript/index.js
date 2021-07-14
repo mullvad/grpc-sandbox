@@ -18,6 +18,7 @@ protoLoader
 
       const call = client.serverStreamingEcho({ message: 'HELLO2' });
       call.on('data', console.log);
+      call.cancel();
     });
   })
   .catch(console.error);
